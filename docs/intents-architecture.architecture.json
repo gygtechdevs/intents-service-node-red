@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "node-red-intents · arquitectura del servicio",
+    "output": "intents-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1060, 460],
+    "views": [
+      {
+        "id": "detect-path",
+        "label": "Ruta de detección",
+        "focus": ["gateway", "http", "app", "domain", "infra", "bedrock"],
+        "note": "Keywords primero; en un miss, PII mask, Titan y pgvector; empate cercano lo resuelve Nova Micro."
+      },
+      {
+        "id": "admin-path",
+        "label": "Ruta administrativa",
+        "focus": ["admin", "http", "app", "infra", "postgres"],
+        "note": "La SPA administra el catálogo con JWT y permisos WRITE/ADMIN."
+      },
+      {
+        "id": "persistence",
+        "label": "Persistencia",
+        "focus": ["app", "infra", "postgres"],
+        "note": "Los puertos del dominio se implementan con repositorios Postgres y caché en memoria."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "gateway",
+      "type": "external",
+      "label": "api-gateway",
+      "sublabel": "detect · catálogo · eventos",
+      "tag": "X-Internal-Secret",
+      "pos": [40, 52],
+      "size": [130, 64]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "SPA / Admin",
+      "sublabel": "CRUD de intents",
+      "tag": "JWT",
+      "pos": [40, 150],
+      "size": [130, 64]
+    },
+    {
+      "id": "http",
+      "type": "backend",
+      "label": "Interfaz HTTP",
+      "sublabel": "Express · rutas · middlewares",
+      "tag": "helmet · JWT",
+      "pos": [270, 60],
+      "size": [140, 76]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "Aplicación",
+      "sublabel": "casos de uso · clasificadores",
+      "pos": [490, 60],
+      "size": [140, 76]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Dominio",
+      "sublabel": "detector · PiiMasker · puertos",
+      "pos": [710, 60],
+      "size": [140, 76]
+    },
+    {
+      "id": "infra",
+      "type": "backend",
+      "label": "Infraestructura",
+      "sublabel": "repos Pg · caché TTL · Bedrock",
+      "pos": [490, 220],
+      "size": [140, 76]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "intents · examples · events",
+      "tag": "pgvector",
+      "brand": "postgresql",
+      "pos": [890, 220],
+      "size": [150, 76]
+    },
+    {
+      "id": "bedrock",
+      "type": "cloud",
+      "label": "AWS Bedrock",
+      "sublabel": "Titan V2 · Nova Micro",
+      "tag": "opt-in",
+      "pos": [450, 350],
+      "size": [220, 76]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "intents-service :4002 · hexagonal",
+      "wraps": ["http", "app", "domain", "infra"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "gateway-detect",
+      "from": "gateway",
+      "to": "http",
+      "label": "detect · eventos",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "admin-crud",
+      "from": "admin",
+      "to": "http",
+      "label": "JWT · CRUD",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "http-usecases",
+      "from": "http",
+      "to": "app",
+      "label": "casos de uso",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "app-ports",
+      "from": "app",
+      "to": "domain",
+      "label": "puertos",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "app-repos",
+      "from": "app",
+      "to": "infra",
+      "label": "repositorios (puertos)",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [560, 178]
+    },
+    {
+      "id": "infra-sql",
+      "from": "infra",
+      "to": "postgres",
+      "label": "SQL · pgvector",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "infra-bedrock",
+      "from": "infra",
+      "to": "bedrock",
+      "label": "embed · desambiguar (opt-in)",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [650, 323]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Detección",
+      "items": [
+        "Keywords primero: sin costo de Bedrock",
+        "Miss → PII mask → Titan → pgvector top-k",
+        "Empate cercano → Nova Micro elige",
+        "Fail-open: error o timeout ⇒ no intent (HTTP 200)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Persistencia",
+      "items": [
+        "Un Postgres por empresa: sin tenant ni RLS",
+        "Catálogo cacheado en memoria con TTL",
+        "intents · intent_examples · message_events · unmatched_messages"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Seguridad y privacidad",
+      "items": [
+        "JWT HS256 con permisos para el admin",
+        "X-Internal-Secret para el gateway",
+        "PII enmascarada antes de guardar o enviar a AWS",
+        "Captura de misses opt-in + purga diaria"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+services:
+  # Uses the SAME Postgres instance as auth-service (D1). Start it first:
+  #   cd ../node-red-auth && docker compose up -d postgres
+  # Then run the migrations once from the host: npm run migrate:up
+  intents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4002}:4002"
+    environment:
+      PORT: 4002
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:5434/platform_db}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required}
+      INTERNAL_SECRET: ${INTERNAL_SECRET:?INTERNAL_SECRET is required}
+      PG_SSL: ${PG_SSL:-false}
+      # Unmatched-message capture (stores PII-masked text; opt-in)
+      UNMATCHED_CAPTURE_ENABLED: ${UNMATCHED_CAPTURE_ENABLED:-false}
+      UNMATCHED_MAX_LENGTH: ${UNMATCHED_MAX_LENGTH:-500}
+      UNMATCHED_RETENTION_DAYS: ${UNMATCHED_RETENTION_DAYS:-30}
+      # Semantic detection via AWS Bedrock (opt-in; masked text only is sent)
+      SEMANTIC_ENABLED: ${SEMANTIC_ENABLED:-false}
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_PROFILE: ${AWS_PROFILE:-}
+      # Static credentials (local dev). Empty values are ignored by the SDK, which
+      # then falls through to the profile / role in the default provider chain.
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      BEDROCK_EMBED_MODEL_ID: ${BEDROCK_EMBED_MODEL_ID:-amazon.titan-embed-text-v2:0}
+      BEDROCK_DISAMBIGUATOR_MODEL_ID: ${BEDROCK_DISAMBIGUATOR_MODEL_ID:-amazon.nova-micro-v1:0}
+      DISAMBIGUATION_ENABLED: ${DISAMBIGUATION_ENABLED:-true}
+      SEMANTIC_MIN_SIMILARITY: ${SEMANTIC_MIN_SIMILARITY:-0.80}
+      SEMANTIC_AMBIGUITY_MARGIN: ${SEMANTIC_AMBIGUITY_MARGIN:-0.05}
+      SEMANTIC_TOP_K: ${SEMANTIC_TOP_K:-5}
+      SEMANTIC_BUDGET_MS: ${SEMANTIC_BUDGET_MS:-1500}
+      BEDROCK_EMBED_TIMEOUT_MS: ${BEDROCK_EMBED_TIMEOUT_MS:-800}
+      BEDROCK_LLM_TIMEOUT_MS: ${BEDROCK_LLM_TIMEOUT_MS:-1000}
+      BREAKER_FAILURE_THRESHOLD: ${BREAKER_FAILURE_THRESHOLD:-5}
+      BREAKER_COOLDOWN_MS: ${BREAKER_COOLDOWN_MS:-30000}
+    volumes:
+      # Local dev credentials for the default AWS provider chain (read-only)
+      - ${HOME}/.aws:/root/.aws:ro

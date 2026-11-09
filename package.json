@@ -1,0 +1,44 @@
+{
+  "name": "node-red-intents",
+  "version": "1.0.0",
+  "description": "Intents-service: intent catalog (CRUD) and intent detection for the Node-RED platform",
+  "main": "dist/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "bench:detect": "tsx scripts/bench-detect.ts",
+    "migrate:up": "tsx scripts/migrate.ts up",
+    "migrate:down": "tsx scripts/migrate.ts down",
+    "migrate:status": "tsx scripts/migrate.ts status",
+    "backfill:examples": "tsx scripts/backfill-examples.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "3.1164.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.5.0",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.13.14",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^5.0.3"
+  }
+}
